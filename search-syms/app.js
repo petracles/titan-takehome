@@ -1,55 +1,73 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import ls from 'local-storage';
 import 'bulma/bulma';
+
+const
+    FIVE_MIN_IN_SEC = 300,
+    DATE_MS_TO_SEC_DIV = 1000
 
 class App extends Component {
     constructor(props) {
         super(props);
+        let ls_list = []
+        if (ls.get('list')) {
+            ls_list = ls.get('list')
+        }
+
+        let ls_lastCacheRefresh = new Date()
+        if (ls.get('lastCacheRefresh')) {
+            ls_lastCacheRefresh = ls.get('lastCacheRefresh');
+        }
+
         this.state = {
             error: null,
             isLoaded: false,
-            list: [],
-            lastCacheRefresh: Date
+            list: ls_list,
+            lastCacheRefresh: ls_lastCacheRefresh
         };
         this.fetchSymbols = this.fetchSymbols.bind(this);
     }
 
     componentDidMount() {
-        // let now = new Date();
-        // let diffMs = (this.state.lastCacheRefresh - now); // milliseconds between now & lastCacheRefresh
-        // let diffMin = Math.round(diffMs / 60000); // minutes
-        // console.log(diffMin + " minutes since " + this.state.lastCacheRefresh
-        // );
-
         console.log("MOUNTING...")
         this.fetchSymbols()
     }
 
     fetchSymbols() {
-        console.log("refreshSymbols was just called")
-        fetch("http://localhost:3001/")
-            .then(
-                response => response.json()
-            )
-            .then(
-                (data) => {
-                    let listOfSymbolStrings = []
-                    for (let stock of JSON.parse(data)) {
-                        listOfSymbolStrings.push(stock["symbol"] + "was last priced at: $" + stock["price"])
+        let now = new Date()
+        let diffSecs = ((now - ls.get('lastCacheRefresh')) / DATE_MS_TO_SEC_DIV)
+        console.log("It has been " + diffSecs + " seconds since we last fetched!")
+        if (diffSecs >= FIVE_MIN_IN_SEC) {
+            console.log("FETCHING")
+            fetch("http://localhost:3001/")
+                .then(
+                    response => response.json()
+                )
+                .then(
+                    (data) => {
+                        let listOfSymbolStrings = []
+                        for (let stock of JSON.parse(data)) {
+                            listOfSymbolStrings.push(stock["symbol"] + " was last priced at: $" + stock["price"])
+                        }
+                        ls.set('list', listOfSymbolStrings);
+                        ls.set('lastCacheRefresh', Date.now());
+                        this.setState({
+                            isLoaded: true,
+                            list: listOfSymbolStrings,
+                            lastCacheRefresh: Date.now()
+                        });
+                    },
+                    (error) => {
+                        this.setState({
+                            isLoaded: true,
+                            error: error
+                        });
                     }
-                    this.setState({
-                        isLoaded: true,
-                        list: listOfSymbolStrings,
-                        lastCacheRefresh: Date.now()
-                    });
-                },
-                (error) => {
-                    this.setState({
-                        isLoaded: true,
-                        error: error
-                    });
-                }
-            )
+                )
+        } else {
+            console.log("!!! NOT !!! FETCHING")
+        }
     }
 
     render() {

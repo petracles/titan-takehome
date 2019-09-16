@@ -30609,7 +30609,176 @@ if ("development" === 'production') {
 } else {
   module.exports = require('./cjs/react-dom.development.js');
 }
-},{"./cjs/react-dom.development.js":"node_modules/react-dom/cjs/react-dom.development.js"}],"node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
+},{"./cjs/react-dom.development.js":"node_modules/react-dom/cjs/react-dom.development.js"}],"node_modules/local-storage/stub.js":[function(require,module,exports) {
+'use strict';
+
+var ms = {};
+
+function getItem (key) {
+  return key in ms ? ms[key] : null;
+}
+
+function setItem (key, value) {
+  ms[key] = value;
+  return true;
+}
+
+function removeItem (key) {
+  var found = key in ms;
+  if (found) {
+    return delete ms[key];
+  }
+  return false;
+}
+
+function clear () {
+  ms = {};
+  return true;
+}
+
+module.exports = {
+  getItem: getItem,
+  setItem: setItem,
+  removeItem: removeItem,
+  clear: clear
+};
+
+},{}],"node_modules/local-storage/parse.js":[function(require,module,exports) {
+'use strict';
+
+function parse (rawValue) {
+  const parsed = parseValue(rawValue);
+
+  if (parsed === undefined) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function parseValue (rawValue) {
+  try {
+    return JSON.parse(rawValue);
+  } catch (err) {
+    return rawValue;
+  }
+}
+
+module.exports = parse;
+
+},{}],"node_modules/local-storage/tracking.js":[function(require,module,exports) {
+var global = arguments[3];
+'use strict';
+
+var parse = require('./parse');
+var listeners = {};
+var listening = false;
+
+function listen () {
+  if (global.addEventListener) {
+    global.addEventListener('storage', change, false);
+  } else if (global.attachEvent) {
+    global.attachEvent('onstorage', change);
+  } else {
+    global.onstorage = change;
+  }
+}
+
+function change (e) {
+  if (!e) {
+    e = global.event;
+  }
+  var all = listeners[e.key];
+  if (all) {
+    all.forEach(fire);
+  }
+
+  function fire (listener) {
+    listener(parse(e.newValue), parse(e.oldValue), e.url || e.uri);
+  }
+}
+
+function on (key, fn) {
+  if (listeners[key]) {
+    listeners[key].push(fn);
+  } else {
+    listeners[key] = [fn];
+  }
+  if (listening === false) {
+    listen();
+  }
+}
+
+function off (key, fn) {
+  var ns = listeners[key];
+  if (ns.length > 1) {
+    ns.splice(ns.indexOf(fn), 1);
+  } else {
+    listeners[key] = [];
+  }
+}
+
+module.exports = {
+  on: on,
+  off: off
+};
+
+},{"./parse":"node_modules/local-storage/parse.js"}],"node_modules/local-storage/local-storage.js":[function(require,module,exports) {
+var global = arguments[3];
+'use strict';
+
+var stub = require('./stub');
+var parse = require('./parse');
+var tracking = require('./tracking');
+var ls = 'localStorage' in global && global.localStorage ? global.localStorage : stub;
+
+function accessor (key, value) {
+  if (arguments.length === 1) {
+    return get(key);
+  }
+  return set(key, value);
+}
+
+function get (key) {
+  const raw = ls.getItem(key);
+  const parsed = parse(raw);
+  return parsed;
+}
+
+function set (key, value) {
+  try {
+    ls.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function remove (key) {
+  return ls.removeItem(key);
+}
+
+function clear () {
+  return ls.clear();
+}
+
+function backend (store) {
+  store && (ls = store);
+
+  return ls;
+}
+
+accessor.set = set;
+accessor.get = get;
+accessor.remove = remove;
+accessor.clear = clear;
+accessor.backend = backend;
+accessor.on = tracking.on;
+accessor.off = tracking.off;
+
+module.exports = accessor;
+
+},{"./stub":"node_modules/local-storage/stub.js","./parse":"node_modules/local-storage/parse.js","./tracking":"node_modules/local-storage/tracking.js"}],"node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -30689,6 +30858,8 @@ var _react = _interopRequireWildcard(require("react"));
 
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
+var _localStorage = _interopRequireDefault(require("local-storage"));
+
 require("bulma/bulma");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -30715,6 +30886,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+var FIVE_MIN_IN_SEC = 300,
+    DATE_MS_TO_SEC_DIV = 1000;
+
 var App =
 /*#__PURE__*/
 function (_Component) {
@@ -30726,11 +30900,23 @@ function (_Component) {
     _classCallCheck(this, App);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(App).call(this, props));
+    var ls_list = [];
+
+    if (_localStorage.default.get('list')) {
+      ls_list = _localStorage.default.get('list');
+    }
+
+    var ls_lastCacheRefresh = new Date();
+
+    if (_localStorage.default.get('lastCacheRefresh')) {
+      ls_lastCacheRefresh = _localStorage.default.get('lastCacheRefresh');
+    }
+
     _this.state = {
       error: null,
       isLoaded: false,
-      list: [],
-      lastCacheRefresh: Date
+      list: ls_list,
+      lastCacheRefresh: ls_lastCacheRefresh
     };
     _this.fetchSymbols = _this.fetchSymbols.bind(_assertThisInitialized(_this));
     return _this;
@@ -30739,11 +30925,6 @@ function (_Component) {
   _createClass(App, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      // let now = new Date();
-      // let diffMs = (this.state.lastCacheRefresh - now); // milliseconds between now & lastCacheRefresh
-      // let diffMin = Math.round(diffMs / 60000); // minutes
-      // console.log(diffMin + " minutes since " + this.state.lastCacheRefresh
-      // );
       console.log("MOUNTING...");
       this.fetchSymbols();
     }
@@ -30752,46 +30933,58 @@ function (_Component) {
     value: function fetchSymbols() {
       var _this2 = this;
 
-      console.log("refreshSymbols was just called");
-      fetch("http://localhost:3001/").then(function (response) {
-        return response.json();
-      }).then(function (data) {
-        var listOfSymbolStrings = [];
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
+      var now = new Date();
+      var diffSecs = (now - _localStorage.default.get('lastCacheRefresh')) / DATE_MS_TO_SEC_DIV;
+      console.log("It has been " + diffSecs + " seconds since we last fetched!");
 
-        try {
-          for (var _iterator = JSON.parse(data)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var stock = _step.value;
-            listOfSymbolStrings.push(stock["symbol"] + "was last priced at: $" + stock["price"]);
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
+      if (diffSecs >= FIVE_MIN_IN_SEC) {
+        console.log("FETCHING");
+        fetch("http://localhost:3001/").then(function (response) {
+          return response.json();
+        }).then(function (data) {
+          var listOfSymbolStrings = [];
+          var _iteratorNormalCompletion = true;
+          var _didIteratorError = false;
+          var _iteratorError = undefined;
+
           try {
-            if (!_iteratorNormalCompletion && _iterator.return != null) {
-              _iterator.return();
+            for (var _iterator = JSON.parse(data)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              var stock = _step.value;
+              listOfSymbolStrings.push(stock["symbol"] + " was last priced at: $" + stock["price"]);
             }
+          } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
           } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
+            try {
+              if (!_iteratorNormalCompletion && _iterator.return != null) {
+                _iterator.return();
+              }
+            } finally {
+              if (_didIteratorError) {
+                throw _iteratorError;
+              }
             }
           }
-        }
 
-        _this2.setState({
-          isLoaded: true,
-          list: listOfSymbolStrings,
-          lastCacheRefresh: Date.now()
+          _localStorage.default.set('list', listOfSymbolStrings);
+
+          _localStorage.default.set('lastCacheRefresh', Date.now());
+
+          _this2.setState({
+            isLoaded: true,
+            list: listOfSymbolStrings,
+            lastCacheRefresh: Date.now()
+          });
+        }, function (error) {
+          _this2.setState({
+            isLoaded: true,
+            error: error
+          });
         });
-      }, function (error) {
-        _this2.setState({
-          isLoaded: true,
-          error: error
-        });
-      });
+      } else {
+        console.log("!!! NOT !!! FETCHING");
+      }
     }
   }, {
     key: "render",
@@ -30896,7 +31089,7 @@ function (_Component2) {
 }(_react.Component);
 
 _reactDom.default.render(_react.default.createElement(App, null), document.getElementById("app"));
-},{"react":"node_modules/react/index.js","react-dom":"node_modules/react-dom/index.js","bulma/bulma":"node_modules/bulma/bulma.sass"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"react":"node_modules/react/index.js","react-dom":"node_modules/react-dom/index.js","local-storage":"node_modules/local-storage/local-storage.js","bulma/bulma":"node_modules/bulma/bulma.sass"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -30924,7 +31117,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53399" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62138" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
