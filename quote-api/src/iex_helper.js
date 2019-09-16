@@ -1,13 +1,9 @@
 import request from 'request'
 
-function make_API_call(url) {
+function make_IEX_API_call(url) {
     var options = {
         method: 'GET',
         url: url,
-        // headers: {
-        //     'Access-Control-Allow-Credentials': '*',
-        //     'Accept': 'application/json'
-        // }
     };
     return new Promise((resolve, reject) => {
         request(options, (error, response, body) => {
@@ -18,5 +14,5 @@ function make_API_call(url) {
 }
 
 export default {
-    make_API_call
+    make_IEX_API_call
 }

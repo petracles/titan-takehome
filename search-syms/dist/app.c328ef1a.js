@@ -30918,19 +30918,18 @@ function (_Component) {
       list: ls_list,
       lastCacheRefresh: ls_lastCacheRefresh
     };
-    _this.fetchSymbols = _this.fetchSymbols.bind(_assertThisInitialized(_this));
+    _this.GETTopsLast = _this.GETTopsLast.bind(_assertThisInitialized(_this));
     return _this;
   }
 
   _createClass(App, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      console.log("MOUNTING...");
-      this.fetchSymbols();
+      this.GETTopsLast();
     }
   }, {
-    key: "fetchSymbols",
-    value: function fetchSymbols() {
+    key: "GETTopsLast",
+    value: function GETTopsLast() {
       var _this2 = this;
 
       var now = new Date();
@@ -30942,7 +30941,7 @@ function (_Component) {
         fetch("http://localhost:3001/").then(function (response) {
           return response.json();
         }).then(function (data) {
-          var listOfSymbolStrings = [];
+          var listOfSymbolLinks = [];
           var _iteratorNormalCompletion = true;
           var _didIteratorError = false;
           var _iteratorError = undefined;
@@ -30950,7 +30949,7 @@ function (_Component) {
           try {
             for (var _iterator = JSON.parse(data)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
               var stock = _step.value;
-              listOfSymbolStrings.push(stock["symbol"] + " was last priced at: $" + stock["price"]);
+              listOfSymbolLinks.push(stock["symbol"]);
             }
           } catch (err) {
             _didIteratorError = true;
@@ -30967,13 +30966,13 @@ function (_Component) {
             }
           }
 
-          _localStorage.default.set('list', listOfSymbolStrings);
+          _localStorage.default.set('list', listOfSymbolLinks);
 
           _localStorage.default.set('lastCacheRefresh', Date.now());
 
           _this2.setState({
             isLoaded: true,
-            list: listOfSymbolStrings,
+            list: listOfSymbolLinks,
             lastCacheRefresh: Date.now()
           });
         }, function (error) {
@@ -30982,8 +30981,6 @@ function (_Component) {
             error: error
           });
         });
-      } else {
-        console.log("!!! NOT !!! FETCHING");
       }
     }
   }, {
@@ -31039,31 +31036,21 @@ function (_Component2) {
   }, {
     key: "handleChange",
     value: function handleChange(e) {
-      // Variable to hold the original version of the list
-      var currentList = []; // Variable to hold the filtered list before putting into state
-
-      var newList = []; // If the search bar isn't empty
+      var currentList = [];
+      var newList = [];
 
       if (e.target.value !== "") {
-        // Assign the original list to currentList
         currentList = this.props.items; // Use .filter() to determine which items should be displayed
         // based on the search terms
 
         newList = currentList.filter(function (item) {
-          // change current item to lowercase
-          var lc = item.toLowerCase(); // change search term to lowercase
-
-          var filter = e.target.value.toLowerCase(); // check to see if the current list item includes the search term
-          // If it does, it will be added to newList. Using lowercase eliminates
-          // issues with capitalization in search terms and search content
-
+          var lc = item.toLowerCase();
+          var filter = e.target.value.toLowerCase();
           return lc.includes(filter);
         });
       } else {
-        // If the search bar is empty, set newList to original task list
         newList = this.props.items;
-      } // Set the filtered state based on what our rules added to newList
-
+      }
 
       this.setState({
         filtered: newList
@@ -31076,11 +31063,13 @@ function (_Component2) {
         type: "text",
         className: "input",
         onChange: this.handleChange,
-        placeholder: "Search..."
+        placeholder: "Search for a stock's symbol..."
       }), _react.default.createElement("ul", null, this.state.filtered.map(function (item) {
         return _react.default.createElement("li", {
           key: item
-        }, item);
+        }, _react.default.createElement("a", {
+          href: 'http://localhost:3001/' + item
+        }, item));
       })));
     }
   }]);
@@ -31117,7 +31106,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62138" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60547" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

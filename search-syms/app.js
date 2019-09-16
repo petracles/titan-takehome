@@ -26,15 +26,14 @@ class App extends Component {
             list: ls_list,
             lastCacheRefresh: ls_lastCacheRefresh
         };
-        this.fetchSymbols = this.fetchSymbols.bind(this);
+        this.GETTopsLast = this.GETTopsLast.bind(this);
     }
 
     componentDidMount() {
-        console.log("MOUNTING...")
-        this.fetchSymbols()
+        this.GETTopsLast()
     }
 
-    fetchSymbols() {
+    GETTopsLast() {
         let now = new Date()
         let diffSecs = ((now - ls.get('lastCacheRefresh')) / DATE_MS_TO_SEC_DIV)
         console.log("It has been " + diffSecs + " seconds since we last fetched!")
@@ -46,15 +45,17 @@ class App extends Component {
                 )
                 .then(
                     (data) => {
-                        let listOfSymbolStrings = []
+                        let listOfSymbolLinks = []
                         for (let stock of JSON.parse(data)) {
-                            listOfSymbolStrings.push(stock["symbol"] + " was last priced at: $" + stock["price"])
+                            listOfSymbolLinks.push(
+                                stock["symbol"]
+                            )
                         }
-                        ls.set('list', listOfSymbolStrings);
+                        ls.set('list', listOfSymbolLinks);
                         ls.set('lastCacheRefresh', Date.now());
                         this.setState({
                             isLoaded: true,
-                            list: listOfSymbolStrings,
+                            list: listOfSymbolLinks,
                             lastCacheRefresh: Date.now()
                         });
                     },
@@ -65,8 +66,6 @@ class App extends Component {
                         });
                     }
                 )
-        } else {
-            console.log("!!! NOT !!! FETCHING")
         }
     }
 
@@ -105,33 +104,23 @@ class List extends Component {
     }
 
     handleChange(e) {
-        // Variable to hold the original version of the list
         let currentList = [];
-        // Variable to hold the filtered list before putting into state
         let newList = [];
 
-        // If the search bar isn't empty
         if (e.target.value !== "") {
-            // Assign the original list to currentList
             currentList = this.props.items;
 
             // Use .filter() to determine which items should be displayed
             // based on the search terms
             newList = currentList.filter(item => {
-                // change current item to lowercase
                 const lc = item.toLowerCase();
-                // change search term to lowercase
                 const filter = e.target.value.toLowerCase();
-                // check to see if the current list item includes the search term
-                // If it does, it will be added to newList. Using lowercase eliminates
-                // issues with capitalization in search terms and search content
                 return lc.includes(filter);
             });
         } else {
-            // If the search bar is empty, set newList to original task list
             newList = this.props.items;
         }
-        // Set the filtered state based on what our rules added to newList
+
         this.setState({
             filtered: newList
         });
@@ -140,11 +129,11 @@ class List extends Component {
     render() {
         return (
             <div>
-                <input type="text" className="input" onChange={this.handleChange} placeholder="Search..." />
+                <input type="text" className="input" onChange={this.handleChange} placeholder="Search for a stock's symbol..." />
                 <ul>
                     {this.state.filtered.map(item => (
                         <li key={item}>
-                            {item}
+                            <a href={'http://localhost:3001/' + item}>{item}</a>
                         </li>
                     ))}
                 </ul>
