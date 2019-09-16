@@ -30729,37 +30729,66 @@ function (_Component) {
     _this.state = {
       error: null,
       isLoaded: false,
-      list: []
+      list: [],
+      lastCacheRefresh: Date
     };
-    _this.refreshSymbols = _this.refreshSymbols.bind(_assertThisInitialized(_this));
+    _this.fetchSymbols = _this.fetchSymbols.bind(_assertThisInitialized(_this));
     return _this;
   }
 
   _createClass(App, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      this.refreshSymbols();
+      // let now = new Date();
+      // let diffMs = (this.state.lastCacheRefresh - now); // milliseconds between now & lastCacheRefresh
+      // let diffMin = Math.round(diffMs / 60000); // minutes
+      // console.log(diffMin + " minutes since " + this.state.lastCacheRefresh
+      // );
+      console.log("MOUNTING...");
+      this.fetchSymbols();
     }
   }, {
-    key: "refreshSymbols",
-    value: function refreshSymbols() {
+    key: "fetchSymbols",
+    value: function fetchSymbols() {
       var _this2 = this;
 
-      fetch("http://localhost:3001/search/snap").then(function (response) {
+      console.log("refreshSymbols was just called");
+      fetch("http://localhost:3001/").then(function (response) {
         return response.json();
       }).then(function (data) {
-        console.log(data);
+        var listOfSymbolStrings = [];
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = JSON.parse(data)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var stock = _step.value;
+            listOfSymbolStrings.push(stock["symbol"] + "was last priced at: $" + stock["price"]);
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return != null) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
 
         _this2.setState({
           isLoaded: true,
-          list: ["we", "did", "it!"]
+          list: listOfSymbolStrings,
+          lastCacheRefresh: Date.now()
         });
       }, function (error) {
-        console.log("FUCKY: " + error);
-
         _this2.setState({
           isLoaded: true,
-          list: ["oh", "god", "no"],
           error: error
         });
       });
@@ -30895,7 +30924,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50156" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53399" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

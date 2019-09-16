@@ -8,36 +8,48 @@ class App extends Component {
         this.state = {
             error: null,
             isLoaded: false,
-            list: []
+            list: [],
+            lastCacheRefresh: Date
         };
-        this.refreshSymbols = this.refreshSymbols.bind(this);
+        this.fetchSymbols = this.fetchSymbols.bind(this);
     }
 
     componentDidMount() {
-        this.refreshSymbols()
+        // let now = new Date();
+        // let diffMs = (this.state.lastCacheRefresh - now); // milliseconds between now & lastCacheRefresh
+        // let diffMin = Math.round(diffMs / 60000); // minutes
+        // console.log(diffMin + " minutes since " + this.state.lastCacheRefresh
+        // );
+
+        console.log("MOUNTING...")
+        this.fetchSymbols()
     }
 
-    refreshSymbols() {
-        fetch("http://localhost:3001/search/snap")
+    fetchSymbols() {
+        console.log("refreshSymbols was just called")
+        fetch("http://localhost:3001/")
             .then(
                 response => response.json()
             )
             .then(
                 (data) => {
-                    console.log(data)
+                    let listOfSymbolStrings = []
+                    for (let stock of JSON.parse(data)) {
+                        listOfSymbolStrings.push(stock["symbol"] + "was last priced at: $" + stock["price"])
+                    }
                     this.setState({
                         isLoaded: true,
-                        list: ["we", "did", "it!"]
+                        list: listOfSymbolStrings,
+                        lastCacheRefresh: Date.now()
                     });
                 },
                 (error) => {
-                    console.log("FUCKY: " + error)
                     this.setState({
                         isLoaded: true,
-                        list: ["oh", "god", "no"],
                         error: error
                     });
-                })
+                }
+            )
     }
 
     render() {
