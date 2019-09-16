@@ -1,10 +1,18 @@
 import request from 'request'
 
-function make_API_call(url){
+function make_API_call(url) {
+    var options = {
+        method: 'GET',
+        url: url,
+        // headers: {
+        //     'Access-Control-Allow-Credentials': '*',
+        //     'Accept': 'application/json'
+        // }
+    };
     return new Promise((resolve, reject) => {
-        request(url, { json: true }, (err, res, body) => {
-          if (err) reject(err)
-          resolve(body)
+        request(options, (error, response, body) => {
+            if (error) reject(error)
+            resolve(body)
         });
     })
 }

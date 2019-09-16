@@ -30745,14 +30745,10 @@ function (_Component) {
     value: function refreshSymbols() {
       var _this2 = this;
 
-      fetch("http://localhost:3001/search/snap", {
-        mode: 'no-cors',
-        method: 'GET' // headers: new Headers({
-        //     Accept: 'application/vnd.github.cloak-preview'
-        // })
-
-      }).then(function (response) {
-        console.log(response.json);
+      fetch("http://localhost:3001/search/snap").then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        console.log(data);
 
         _this2.setState({
           isLoaded: true,
@@ -30763,7 +30759,7 @@ function (_Component) {
 
         _this2.setState({
           isLoaded: true,
-          list: ["fuck", "this", "shit"],
+          list: ["oh", "god", "no"],
           error: error
         });
       });
@@ -30899,7 +30895,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57184" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50156" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

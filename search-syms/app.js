@@ -18,16 +18,13 @@ class App extends Component {
     }
 
     refreshSymbols() {
-        fetch("http://localhost:3001/search/snap", {
-            mode: 'no-cors',
-            method: 'GET'
-            // headers: new Headers({
-            //     HEADERS: GO HERE
-            // })
-        })
+        fetch("http://localhost:3001/search/snap")
             .then(
-                (response) => {
-                    console.log(response.json)
+                response => response.json()
+            )
+            .then(
+                (data) => {
+                    console.log(data)
                     this.setState({
                         isLoaded: true,
                         list: ["we", "did", "it!"]
